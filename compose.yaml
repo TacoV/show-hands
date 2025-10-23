@@ -1,5 +1,5 @@
 services:
-  yolo:
+  show-hands:
     build:
       context: ./
       dockerfile: ./Dockerfile
