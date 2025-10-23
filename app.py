@@ -20,8 +20,8 @@ def capture_frames():
 
     # Use the default webcam and use 1280x720
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     if not cap.isOpened():
         print('Cannot open camera stream')
@@ -58,14 +58,10 @@ def gen_frames():
 
         # Run YOLO pose tracking
         results = model.track(frame, persist=True, tracker="bytetrack.yaml")
-        # results = model.predict(frame)
+        result = results[0].numpy()
 
-        # Extract the landmarks
-        keypoints = results[0].keypoints.xy.cpu().numpy()
+        keypoints = result.keypoints.xy
 
-        # Draw keypoints, boxes, etc.
-        frame = results[0].plot()
-        
         # Annotate raised hands!
         detect_hands_raised(keypoints, frame)
 

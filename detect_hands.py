@@ -7,38 +7,34 @@ def detect_hands_raised(keypoints, frame):
     frame: image array for annotation
     returns: list of booleans for each person
     """
-    raised_flags = []
+    votes = []
 
     for kp in keypoints:
         # get keypoints safely
         # https://docs.ultralytics.com/tasks/pose/
         try:
-            nose, l_wrist, r_wrist = kp[0], kp[9], kp[10]
+            nose = kp[0]
+            l_eye, r_eye = kp[1], kp[2]
+            l_wrist, r_wrist = kp[9], kp[10]
         except IndexError:
-            raised_flags.append(False)
             continue
 
-        def hand_up(nose, wrist):
-            if np.any(np.isnan([*nose, *wrist])):
-                return False
-            return wrist[1] < nose[1]
+        if np.any(np.isnan([*nose, *l_eye, *r_eye, *l_wrist, *r_wrist])):
+            continue
 
-        left_up = hand_up(nose, l_wrist)
-        right_up = hand_up(nose, r_wrist)
-        raised = left_up or right_up
-        raised_flags.append(raised)
+        if nose[1] < l_wrist[1] and nose[1] < r_wrist[1]:
+            continue
 
-        if left_up and right_up:
-            text = "Beide"
-            coords = (int((l_wrist[0]+r_wrist[0])/2), int((l_wrist[1]+r_wrist[1])/2))
-        elif left_up:
-            text = "Links"
-            coords = (int(l_wrist[0]), int(l_wrist[1]))
-        elif right_up:
-            text = "Rechts"
-            coords = (int(r_wrist[0]), int(r_wrist[1]))
+        pro = l_wrist[1] > r_wrist[1]
+        con = not pro
 
-        if raised:
-            cv2.putText( frame, text, coords, cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        # Draw a green triangle for pro, red for con
+        size = 0.6 * (l_eye[0] - r_eye[0])
+        leftside = np.array([nose[0] - size, nose[1]], dtype=np.int32)
+        rightside = np.array([nose[0] + size, nose[1]], dtype=np.int32)
+        point = np.array([nose[0], nose[1] + size * (-2 if pro else 2)], dtype=np.int32)
+        cv2.fillPoly(frame,
+            [np.array([leftside, rightside, point])],
+            color=(0, 255, 0) if pro else (0, 0, 255))
 
-    return raised_flags
+    return votes
