@@ -19,16 +19,29 @@ def detect_hands_raised(keypoints, frame):
         except IndexError:
             continue
 
-        if np.any(np.isnan([*nose, *l_eye, *r_eye, *l_wrist, *r_wrist])):
-            continue
+        def hand_raised(nose, wrist):
+            if np.any(np.isnan([*nose, *wrist])):
+                return False
+            if nose[1] < wrist[1]:
+                return False
+            return True
 
-        if nose[1] < l_wrist[1] and nose[1] < r_wrist[1]:
-            continue
+        left_raised = hand_raised(nose, l_wrist)
+        righ_raised = hand_raised(nose, r_wrist)
 
-        pro = l_wrist[1] > r_wrist[1]
+        if not left_raised and not righ_raised:
+            continue
+        if left_raised and not righ_raised:
+            pro = False
+        elif righ_raised and not left_raised:
+            pro = True
+        else:
+            pro = l_wrist[1] > r_wrist[1]
         con = not pro
 
         # Draw a green triangle for pro, red for con
+        if np.any(np.isnan([*l_eye, *r_eye])):
+            continue
         size = 0.6 * (l_eye[0] - r_eye[0])
         leftside = np.array([nose[0] - size, nose[1]], dtype=np.int32)
         rightside = np.array([nose[0] + size, nose[1]], dtype=np.int32)
